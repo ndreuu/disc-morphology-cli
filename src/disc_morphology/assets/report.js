@@ -76,8 +76,22 @@
     const focus=f.candidate_mask_pixels?f.focus_xy:representative?.focus_xy||f.focus_xy;
     if(state.zoom&&focus&&(representative?.candidate_mask_pixels||f.candidate_mask_pixels)){
       const radius=data.synthetic?64:state.radius;
-      sw=Math.min(im.width,2*radius);sh=Math.min(im.height,2*radius);
-      sx=Math.max(0,Math.min(im.width-sw,focus[0]+.5-sw/2));sy=Math.max(0,Math.min(im.height-sh,focus[1]+.5-sh/2));
+      const target=f.candidate_mask_pixels?f:representative;
+      const anchors=(target?.mask_polygons_xy||[]).flat();
+      for(const segment of Object.values(target?.record?.segments_xy||{}))if(Array.isArray(segment))anchors.push(...segment);
+      const usable=anchors.filter(xy=>Array.isArray(xy)&&xy.length===2&&xy.every(Number.isFinite));
+      let center=focus;
+      sw=2*radius;sh=2*radius;
+      if(usable.length){
+        let left=Infinity,right=-Infinity,top=Infinity,bottom=-Infinity;
+        for(const [x,y] of usable){left=Math.min(left,x);right=Math.max(right,x);top=Math.min(top,y);bottom=Math.max(bottom,y);}
+        center=[(left+right)/2,(top+bottom)/2];
+        // Include every component and measurement line, even when the mask's
+        // mass centroid lies far from its small measurable component.
+        sw=Math.max(sw,right-left+16);sh=Math.max(sh,bottom-top+16);
+      }
+      sw=Math.min(im.width,sw);sh=Math.min(im.height,sh);
+      sx=Math.max(0,Math.min(im.width-sw,center[0]+.5-sw/2));sy=Math.max(0,Math.min(im.height-sh,center[1]+.5-sh/2));
     }
     const row=im.spacing_mm[0],col=im.spacing_mm[1],scale=Math.min((w-20)/(sw*col),(h-24)/(sh*row));
     const dx=scale*col,dy=scale*row,dw=sw*dx,dh=sh*dy,ox=(w-dw)/2,oy=(h-dh)/2;
