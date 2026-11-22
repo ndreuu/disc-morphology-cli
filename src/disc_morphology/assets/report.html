@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Локальный отчёт геометрии кандидатной маски диска: срезы, B, D, H и D/B.">
+  <title>DISC — геометрия выпячивания</title>
+  <style>/* REPORT_STYLES */</style>
+</head>
+<body>
+  <header class="topbar"><a class="brand" href="#top">DISC<span>MORPHOLOGY</span></a><span class="local-label">Локальный отчёт</span><div class="actions"><button id="export" type="button">Скачать JSON</button><button id="print" type="button">Печать</button></div></header>
+  <main id="top">
+    <div class="intro"><div><div class="eyebrow">КОНТУР И ГЕОМЕТРИЯ</div><h1>Форма выпячивания диска</h1><p>Срезы, измерения и объяснение геометрической гипотезы.</p></div><div class="study-meta"><span id="study"></span><span id="source"></span></div></div>
+    <div id="demo-banner" class="notice demo" hidden><b>Синтетический пример</b><span>Учебная геометрия с известным масштабом. Это не МРТ пациента и не результат нейросети.</span></div>
+    <nav id="levels" class="levels" aria-label="Выбор уровня диска"></nav>
+    <section class="workspace" aria-label="Просмотр снимков и измерений">
+      <div class="viewer">
+        <div class="toolbar"><div class="layers"><label><input type="checkbox" id="layer-mask" checked>Контур</label><label><input type="checkbox" id="layer-reference" checked>Опорная линия</label><label><input type="checkbox" id="layer-measures" checked>B / D / H</label></div><div class="zoom-controls"><button id="zoom" type="button" aria-pressed="true">Весь кадр</button><label>Масштаб<input id="zoom-range" type="range" min="18" max="80" value="24" step="2" aria-label="Радиус области просмотра"></label></div></div>
+        <div class="image-grid">
+          <article class="image-panel active" data-plane="sagittal"><header><h2>Сагиттальная</h2><span class="image-type">Контур модели</span></header><div class="canvas-wrap"><canvas class="image" tabindex="0" aria-label="Сагиттальный снимок; стрелками можно менять срезы"></canvas><canvas class="overview" aria-label="Полный кадр с областью увеличения"></canvas></div><div class="slice-controls"><button type="button" data-step="-1" aria-label="Предыдущий сагиттальный срез">‹</button><input class="slice" type="range" min="0" max="0" value="0" aria-label="Сагиттальный срез"><button type="button" data-step="1" aria-label="Следующий сагиттальный срез">›</button><output class="slice-count"></output></div><p class="plane-note"></p></article>
+          <article class="image-panel" data-plane="axial"><header><h2>Аксиальная</h2><span class="image-type">Перенос маски</span></header><div class="canvas-wrap"><canvas class="image" tabindex="0" aria-label="Аксиальный снимок; стрелками можно менять срезы"></canvas><canvas class="overview" aria-label="Полный кадр с областью увеличения"></canvas></div><div class="slice-controls"><button type="button" data-step="-1" aria-label="Предыдущий аксиальный срез">‹</button><input class="slice" type="range" min="0" max="0" value="0" aria-label="Аксиальный срез"><button type="button" data-step="1" aria-label="Следующий аксиальный срез">›</button><output class="slice-count"></output></div><p class="plane-note"></p></article>
+        </div>
+        <div class="legend"><span class="mask-key">Контур кандидатной маски</span><span class="b-key">B — основание</span><span class="d-key">D — наружная часть</span><span class="h-key">H — глубина</span></div>
+      </div>
+      <aside class="calculation" aria-labelledby="calculation-title">
+        <div class="eyebrow">ВЫБРАННЫЙ СРЕЗ</div><h2 id="calculation-title">Расчёт геометрии</h2>
+        <div class="plane-tabs" aria-label="Плоскость расчётов"><button type="button" data-metric-plane="sagittal" aria-pressed="true">Сагиттальная</button><button type="button" data-metric-plane="axial" aria-pressed="false">Аксиальная</button></div>
+        <p id="metric-source" class="meta"></p>
+        <div class="metrics"><div><span>B · основание</span><strong id="metric-b">—</strong><small>мм</small></div><div><span>D · наружная часть</span><strong id="metric-d">—</strong><small>мм</small></div><div><span>H · глубина</span><strong id="metric-h">—</strong><small>мм</small></div><div><span>D/B · отношение</span><strong id="metric-r">—</strong><small>без единиц</small></div></div>
+        <div class="ratio-formula" id="ratio-formula"></div>
+        <div class="decision"><span class="eyebrow">ПОЧЕМУ ТАКАЯ ГИПОТЕЗА</span><h3 id="frame-decision">Недостаточно данных</h3><div id="difference" class="equation"></div><p id="uncertainty"></p><p id="frame-explanation"></p></div>
+        <div class="clinical"><span>Итоговый морфологический тип</span><b id="clinical-result">Не определён</b><small id="overall-hypothesis"></small></div>
+      </aside>
+    </section>
+    <section class="method"><div class="section-title"><div class="eyebrow">ЧТО ИМЕННО ИЗМЕРЯЕТСЯ</div><h2>Формулы и линии на снимке</h2></div><div class="formula-grid"><article><b>B · основание</b><div class="formula">B = |b₂ − b₁|</div><p>Длина связного отрезка маски на опорной линии, в физических миллиметрах.</p></article><article><b>D · наружная часть</b><div class="formula">D = max |d₂ − d₁|</div><p>Максимальная связная ширина параллельно B за первой полосой разрешения.</p></article><article><b>H · глубина</b><div class="formula">H = max расстояния ⟂</div><p>Максимальное расстояние наружной части маски по перпендикуляру к опорной линии.</p></article><article><b>D/B · форма</b><div class="formula">R = D / B</div><p>Отношение ширины наружной части к основанию. Пограничные значения учитывают разрешение.</p></article></div>
+      <div class="rule-grid"><div><b>Гипотеза протрузии</b><code>B − D &gt; 2u</code><p>В обеих пригодных независимых плоскостях основание заметно шире наружной части.</p></div><div><b>Гипотеза экструзии</b><code>D − B &gt; 2u</code><p>Хотя бы в одной пригодной плоскости наружная часть заметно шире основания.</p></div><div><b>Неопределённо</b><code>|D − B| ≤ 2u</code><p>Или нет пригодных границ, основания либо данных нужных плоскостей.</p></div></div>
+      <p class="method-note">u — нижняя оценка неопределённости по разрешению, а не полная ошибка сегментации. 2u — технический запас этого прототипа. Глубина H сама по себе не определяет тип. Протрузия и экструзия обе относятся к грыжам диска. Используемая параллельная ширина D — приближение <a href="https://radiology.queensu.ca/source/Lumbar_Disc_Nomenclature.pdf" target="_blank" rel="noopener">морфологических критериев Fardon et al., 2014</a>.</p>
+    </section>
+    <details class="limitations" open><summary>Что учитывает текущий результат</summary><ul id="limitations"></ul></details>
+    <details class="provenance"><summary>Данные выбранного среза</summary><pre id="record"></pre></details>
+    <footer><span>DISC / Morphology CLI <span id="version"></span></span><span>Исследовательская геометрия · результаты требуют проверки</span></footer>
+  </main>
+  <script type="application/json" id="report-data">/* REPORT_DATA */</script>
+  <script>/* REPORT_SCRIPT */</script>
+</body>
+</html>
