@@ -20,7 +20,17 @@
 
   function selectCase(index){
     state.caseIndex=index;state.plane='sagittal';
-    for(const p of ['sagittal','axial'])state.indices[p]=planeData(p).selected_index||0;
+    for(const p of ['sagittal','axial']){
+      const entries=planeData(p);let selected=entries.selected_index||0;
+      const numeric=f=>['candidate_base_width_mm','candidate_displaced_width_mm','candidate_depth_mm'].every(k=>typeof f?.record?.[k]==='number'&&Number.isFinite(f.record[k]));
+      // Prefer a frame with visible estimates. This only chooses the initial
+      // view; stored representative decisions and all quality gates stay intact.
+      if(!numeric(entries.frames[selected])){
+        const available=entries.frames.map((f,i)=>({f,i})).filter(x=>numeric(x.f));
+        if(available.length)selected=available.reduce((a,b)=>a.f.candidate_mask_pixels>=b.f.candidate_mask_pixels?a:b).i;
+      }
+      state.indices[p]=selected;
+    }
     $$('#levels button').forEach((b,i)=>b.setAttribute('aria-pressed',String(i===index)));
     const list=$('#limitations');list.replaceChildren();
     for(const message of current().limitations||[]){const li=document.createElement('li');li.textContent=message;list.append(li);}
@@ -117,7 +127,7 @@
     const f=frame(state.plane),r=f?.record||{},projected=!data.synthetic&&state.plane==='axial';
     const b=r.candidate_base_width_mm,d=r.candidate_displaced_width_mm,h=r.candidate_depth_mm,ratio=r.candidate_ratio,u=r.uncertainty_mm;
     text('#metric-b',fmt(b));text('#metric-d',fmt(d));text('#metric-h',fmt(h));text('#metric-r',fmt(ratio));
-    text('#metric-source',`${state.plane==='sagittal'?'Сагиттальная':'Аксиальная'} · срез ${(state.indices[state.plane]||0)+1}`);
+    text('#metric-source',`${state.plane==='sagittal'?'Сагиттальная':'Аксиальная'} · срез ${(state.indices[state.plane]||0)+1}${data.synthetic?'':' · предварительно'}`);
     text('#ratio-formula',typeof b==='number'&&b>0&&typeof d==='number'?`D/B = ${fmt(d)} / ${fmt(b)} = ${fmt(ratio)}`:'D/B не определено: нет пригодного основания.');
     $$('.plane-tabs button').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.metricPlane===state.plane)));
     let conclusion='Недостаточно данных';
@@ -130,7 +140,9 @@
       text('#difference',`${d>=b?'D − B':'B − D'} = ${fmt(delta,3)} мм ${delta>threshold?'>':'≤'} 2u = ${fmt(threshold,3)} мм`);
       text('#uncertainty',`u = ${fmt(u,3)} мм — нижняя оценка по разрешению. Порог 2u относится к разнице ширин, а не к глубине выпячивания.`);
     }else{text('#difference','Пригодного сравнения B и D нет.');text('#uncertainty','Отсутствие измерения не означает отсутствие грыжи.');}
-    const explanation=data.synthetic?'Известная учебная маска; решение рассчитано тем же модулем геометрии.':projected?'Проекция не даёт второй независимой оценки формы. Тип по этому аксиальному контуру не подтверждается.':r.geometry_measurable?'Это геометрия кандидатной маски относительно приближённой границы. Анатомия и контур требуют проверки.':r.quality_flags?.includes('empty_mask')?'На этом срезе нет кандидатной маски. Листайте соседние срезы; отсутствие маски не исключает грыжу.':'Нет пригодного основания, разрешения или опорной границы для определения формы на этом срезе.';
+    let explanation=data.synthetic?'Известная учебная маска; решение рассчитано тем же модулем геометрии.':projected?'Проекция не даёт второй независимой оценки формы. Тип по этому аксиальному контуру не подтверждается.':r.geometry_measurable?'Это геометрия кандидатной маски относительно приближённой границы. Анатомия и контур требуют проверки.':r.quality_flags?.includes('empty_mask')?'На этом срезе нет кандидатной маски. Листайте соседние срезы; отсутствие маски не исключает грыжу.':'Числа описывают маску, но данных для определения её формы недостаточно.';
+    const reasons={disconnected_mask:'Маска состоит из несвязных частей.',multiple_base_intervals:'Пересечение опорной линии неоднозначно.',base_not_intersecting_reference:'Основание не пересекает опорную линию.',missing_base:'Пригодное основание не найдено.',no_resolved_displaced_tissue:'Наружная часть не разрешается относительно этой границы.',touches_frame_edge:'Маска касается края кадра.'};
+    if(!data.synthetic&&!r.geometry_measurable)for(const flag of r.quality_flags||[])if(reasons[flag])explanation+=' '+reasons[flag];
     text('#frame-explanation',explanation);
     text('#clinical-result',data.synthetic?'Не применяется — учебная схема':'Не определён');
     text('#overall-hypothesis','Гипотеза по выбранным представительным срезам: '+(names[current().decision?.geometric_candidate]||'Не определено'));
